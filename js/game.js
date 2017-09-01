@@ -1,11 +1,11 @@
-// Create the canvas
+//制作画布
 var canvas = document.createElement("canvas");
 var ctx = canvas.getContext("2d");
 canvas.width = 512;
 canvas.height = 480;
 document.body.appendChild(canvas);
 
-// Background image
+//渲染背景
 var bgReady = false;
 var bgImage = new Image();
 bgImage.onload = function () {
@@ -13,7 +13,7 @@ bgImage.onload = function () {
 };
 bgImage.src = "images/background.png";
 
-// Hero image
+// 英雄画面
 var heroReady = false;
 var heroImage = new Image();
 heroImage.onload = function () {
@@ -21,7 +21,7 @@ heroImage.onload = function () {
 };
 heroImage.src = "images/hero.png";
 
-// Monster image
+// 怪兽画面
 var monsterReady = false;
 var monsterImage = new Image();
 monsterImage.onload = function () {
@@ -29,102 +29,120 @@ monsterImage.onload = function () {
 };
 monsterImage.src = "images/monster.png";
 
-// Game objects
+//游戏结束画面
+var gameOverReady = false;
+var gameOverImage = new Image();
+gameOverImage.onload = function(){
+
+}
+gameOverImage.src = "";
+
+//英雄对象
 var hero = {
-	speed: 256 // movement in pixels per second
+	speed: 256 //英雄每秒钟移动的速度
 };
+//怪兽对象
 var monster = {};
+
+//抓到怪兽的个数
 var monstersCaught = 0;
 
-// Handle keyboard controls
+//按键控制器
 var keysDown = {};
-
+//监听方向键按下操作
 addEventListener("keydown", function (e) {
 	keysDown[e.keyCode] = true;
 }, false);
-
+//监听方向键抬起操作
 addEventListener("keyup", function (e) {
 	delete keysDown[e.keyCode];
 }, false);
 
-// Reset the game when the player catches a monster
+//当英雄抓到怪兽后重置英雄位置
 var reset = function () {
+	//英雄起始位置在画布中心
 	hero.x = canvas.width / 2;
 	hero.y = canvas.height / 2;
-
-	// Throw the monster somewhere on the screen randomly
-	monster.x = 32 + (Math.random() * (canvas.width - 64));
-	monster.y = 32 + (Math.random() * (canvas.height - 64));
+	//随机出现怪兽
+	monster.x = 32 + (Math.random() * (canvas.width - 96));
+	monster.y = 32 + (Math.random() * (canvas.height - 96));
 };
 
-// Update game objects
+//更新游戏角色属性
 var update = function (modifier) {
-	if (38 in keysDown) { // Player holding up
+	if (38 in keysDown) { // 上
 		hero.y -= hero.speed * modifier;
 	}
-	if (40 in keysDown) { // Player holding down
+	if (40 in keysDown) { // 下
 		hero.y += hero.speed * modifier;
 	}
-	if (37 in keysDown) { // Player holding left
+	if (37 in keysDown) { // 左
 		hero.x -= hero.speed * modifier;
 	}
-	if (39 in keysDown) { // Player holding right
+	if (39 in keysDown) { // 右
 		hero.x += hero.speed * modifier;
 	}
-
-	// Are they touching?
-	if (
-		hero.x <= (monster.x + 32)
-		&& monster.x <= (hero.x + 32)
-		&& hero.y <= (monster.y + 32)
-		&& monster.y <= (hero.y + 32)
-	) {
+	//英雄是否合怪兽位置重合
+	if (isCaught()) {
+		//加分
 		++monstersCaught;
+		//重置角色位置
 		reset();
 	}
 };
+/**
+ * 是否抓到怪兽
+ */
+var isCaught = function(){
+	return hero.x <= (monster.x + 32)&& monster.x <= (hero.x + 32)&& hero.y <= (monster.y + 32)&& monster.y <= (hero.y + 32);
+}
+/**
+ * 是否游戏结束
+ */
+var isGameOver = function(){
+	//当英雄撞墙时游戏结束
+    return hero.x <= 32||hero.x >= (canvas.width - 32)|| hero.y<=32||hero.y>=(canvas.height - 32);
+}
+/**
+ * 游戏结束
+ */
+var gameOver = function (){
 
-// Draw everything
+}
+
+//渲染画面
 var render = function () {
 	if (bgReady) {
 		ctx.drawImage(bgImage, 0, 0);
 	}
-
 	if (heroReady) {
 		ctx.drawImage(heroImage, hero.x, hero.y);
 	}
-
 	if (monsterReady) {
 		ctx.drawImage(monsterImage, monster.x, monster.y);
 	}
 
-	// Score
+
+	// 得分
 	ctx.fillStyle = "rgb(250, 250, 250)";
 	ctx.font = "24px Helvetica";
 	ctx.textAlign = "left";
 	ctx.textBaseline = "top";
-	ctx.fillText("Goblins caught: " + monstersCaught, 32, 32);
+	ctx.fillText("SCORE: " + monstersCaught, 32, 32);
 };
 
-// The main game loop
+//主函数
 var main = function () {
 	var now = Date.now();
 	var delta = now - then;
-
-	update(delta / 1000);
+	update(delta / 5000);
 	render();
-
 	then = now;
-
-	// Request to do this again ASAP
 	requestAnimationFrame(main);
 };
 
-// Cross-browser support for requestAnimationFrame
-var w = window;
-requestAnimationFrame = w.requestAnimationFrame || w.webkitRequestAnimationFrame || w.msRequestAnimationFrame || w.mozRequestAnimationFrame;
-
-// Let's play this game!
-var then = Date.now();
+//重置角色位置
 reset();
+// 游戏开始
+var then = Date.now();
 main();
