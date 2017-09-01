@@ -30,12 +30,11 @@ monsterImage.onload = function () {
 monsterImage.src = "images/monster.png";
 
 //游戏结束画面
-var gameOverReady = false;
 var gameOverImage = new Image();
-gameOverImage.onload = function(){
-
-}
-gameOverImage.src = "";
+gameOverImage.src = "images/gameover.png";
+//重新开始画面
+var gameRetryImage = new Image();
+gameRetryImage.src = "images/retry.png";
 
 //英雄对象
 var hero = {
@@ -49,6 +48,10 @@ var monstersCaught = 0;
 
 //按键控制器
 var keysDown = {};
+
+//停止标识
+var isStop = false;
+
 //监听方向键按下操作
 addEventListener("keydown", function (e) {
 	keysDown[e.keyCode] = true;
@@ -57,9 +60,21 @@ addEventListener("keydown", function (e) {
 addEventListener("keyup", function (e) {
 	delete keysDown[e.keyCode];
 }, false);
-
+//监听Retry点击
+addEventListener("click",function(e){
+	//当前为暂停状态
+	if(isStop){
+		//点击区域为Retry区域
+		var isClickTry =(e.offsetX>=(canvas.width*0.25)&&e.offsetX<=(canvas.width*0.75))&&(e.offsetY>=(canvas.height*0.66)&&e.offsetY<=(canvas.height-64));
+		if(isClickTry){
+            monstersCaught = 0;
+            reset();
+		}
+	}
+},false);
 //当英雄抓到怪兽后重置英雄位置
 var reset = function () {
+    isStop = false;
 	//英雄起始位置在画布中心
 	hero.x = canvas.width / 2;
 	hero.y = canvas.height / 2;
@@ -70,6 +85,9 @@ var reset = function () {
 
 //更新游戏角色属性
 var update = function (modifier) {
+	if(isStop){
+		return;
+	}
 	if (38 in keysDown) { // 上
 		hero.y -= hero.speed * modifier;
 	}
@@ -89,6 +107,9 @@ var update = function (modifier) {
 		//重置角色位置
 		reset();
 	}
+	if(isGameOver()){
+        isStop = true;
+	}
 };
 /**
  * 是否抓到怪兽
@@ -101,13 +122,7 @@ var isCaught = function(){
  */
 var isGameOver = function(){
 	//当英雄撞墙时游戏结束
-    return hero.x <= 32||hero.x >= (canvas.width - 32)|| hero.y<=32||hero.y>=(canvas.height - 32);
-}
-/**
- * 游戏结束
- */
-var gameOver = function (){
-
+    return hero.x <= 32||hero.x >= (canvas.width - 64)|| hero.y<=32||hero.y>=(canvas.height - 64);
 }
 
 //渲染画面
@@ -121,8 +136,10 @@ var render = function () {
 	if (monsterReady) {
 		ctx.drawImage(monsterImage, monster.x, monster.y);
 	}
-
-
+    if(isGameOver()) {
+        ctx.drawImage(gameOverImage, 0, 0);
+        ctx.drawImage(gameRetryImage, 0, canvas.height / 2);
+    }
 	// 得分
 	ctx.fillStyle = "rgb(250, 250, 250)";
 	ctx.font = "24px Helvetica";
@@ -135,7 +152,7 @@ var render = function () {
 var main = function () {
 	var now = Date.now();
 	var delta = now - then;
-	update(delta / 5000);
+	update(delta / 1000);
 	render();
 	then = now;
 	requestAnimationFrame(main);
